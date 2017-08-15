@@ -134,6 +134,7 @@
     <orderEntry type="library" name="reactive-streams-1.0.0" level="project" />
     <orderEntry type="library" name="fuel-android-1.9.0" level="project" />
     <orderEntry type="library" name="support-compat-26.0.1" level="project" />
+    <orderEntry type="library" name="anko-sdk25-0.10.1" level="project" />
     <orderEntry type="library" name="annotations-13.0" level="project" />
     <orderEntry type="library" name="runtime-1.0.0-alpha3" level="project" />
     <orderEntry type="library" scope="TEST" name="javax.inject-1" level="project" />
@@ -143,6 +144,7 @@
     <orderEntry type="library" name="animated-vector-drawable-26.0.1" level="project" />
     <orderEntry type="library" name="core-1.0.0-alpha3" level="project" />
     <orderEntry type="library" name="fuel-livedata-1.9.0" level="project" />
+    <orderEntry type="library" name="anko-commons-0.10.1" level="project" />
     <orderEntry type="library" scope="TEST" name="kxml2-2.3.0" level="project" />
     <orderEntry type="library" name="fuel-1.9.0" level="project" />
     <orderEntry type="library" scope="TEST" name="javawriter-2.1.1" level="project" />
