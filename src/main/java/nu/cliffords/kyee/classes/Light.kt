@@ -4,13 +4,16 @@ import android.util.Log
 import org.json.JSONObject
 import java.net.*
 import nu.cliffords.kyee.interfaces.LightStateChangeListener
-import nu.cliffords.kyee.teeceepee.TCPClient
+import nu.cliffords.kyee.network.TCPClient
 
 
 /**
  * Created by Henrik Nelson on 2017-08-14.
  */
-class Light (val lightAddress: URI): LightStateChangeListener {
+
+//This class represents a single Yeelight smart device
+//Can not be created expp
+class Light internal constructor(val lightAddress: URI): LightStateChangeListener {
 
     private var client: TCPClient? = null
     private var listeners: MutableList<LightStateChangeListener> = mutableListOf()

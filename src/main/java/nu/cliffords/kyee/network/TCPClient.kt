@@ -1,4 +1,4 @@
-package nu.cliffords.kyee.teeceepee
+package nu.cliffords.kyee.network
 
 import android.util.Log
 import nu.cliffords.kyee.interfaces.LightStateChangeListener
@@ -11,8 +11,10 @@ import java.io.*
 import java.net.URI
 
 /**
- * Created by henrik.nelson2 on 2017-08-15.
+ * Created by Henrik Nelson on 2017-08-15.
  */
+
+
 class TCPClient(val uri: URI, val stateChangeListener: LightStateChangeListener) {
 
     init {
