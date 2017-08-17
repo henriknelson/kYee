@@ -29,59 +29,64 @@ class LightManager private constructor() {
         doAsync {
 
             val socket = MulticastSocket()
-            socket.soTimeout = 1000
-            socket.joinGroup(InetAddress.getByName(MCAST_ADDR) )
+            try {
+                socket.soTimeout = 1000
+                socket.joinGroup(InetAddress.getByName(MCAST_ADDR))
 
-            Log.d("kYee","LightManager - Sending multicast discovery message")
-            sendDiscoveryMessage(socket)
+                Log.d("kYee", "LightManager - Sending multicast discovery message")
+                sendDiscoveryMessage(socket)
 
-            val responseList = getDiscoveryResponses(socket,timeoutTime)
+                val responseList = getDiscoveryResponses(socket, timeoutTime)
 
-            val existingIds = mutableListOf<String>()
+                val existingIds = mutableListOf<String>()
 
-            //Parse responses to see if we have any new lights
-            responseList.forEach { response ->
+                //Parse responses to see if we have any new lights
+                responseList.forEach { response ->
 
-                //Make a map of all the interesting key/value pairs in the response
-                var propMap = response.split("\r\n").filter { propertyRow -> propertyRow.contains(":")}.associateBy(
-                    {it.split(delimiters = ":", ignoreCase =  false, limit = 2)[0]},
-                    {it.split(delimiters = ":", ignoreCase =  false, limit = 2)[1].trim()}
-                )
+                    //Make a map of all the interesting key/value pairs in the response
+                    var propMap = response.split("\r\n").filter { propertyRow -> propertyRow.contains(":") }.associateBy(
+                            { it.split(delimiters = ":", ignoreCase = false, limit = 2)[0] },
+                            { it.split(delimiters = ":", ignoreCase = false, limit = 2)[1].trim() }
+                    )
 
-                //If this seems to be a legit response and we aren't already keeping track of this particular light..
-                if (propMap.containsKey("id") && !(lights.containsKey(propMap.get("id")!!))) {
-                    val lightAddress = URI.create(propMap.getValue("Location"))
-                    val light = Light(lightAddress)
-                    light.id = propMap.getValue("id")
-                    light.firmware_version = propMap.getValue("fw_ver")
-                    light.model = propMap.getValue("model")
-                    light.support = propMap.getValue("support").split(" ").toTypedArray()
-                    light.power = propMap.getValue("power") == "on"
-                    light.brightness = propMap.getValue("bright").toInt()
-                    light.color_mode = propMap.getValue("color_mode").toString().toInt()
-                    light.ct = propMap.getValue("ct").toInt()
-                    light.rgb = propMap.getValue("rgb").toInt()
-                    light.hue = propMap.getValue("hue").toInt()
-                    light.saturation = propMap.getValue("sat").toInt()
-                    light.name = propMap.getValue("name")
-                    existingIds.add(light.id!!)
-                    lights.put(light.id!!,light)
-                }else if(propMap.containsKey("id") && (lights.containsKey(propMap.get("id")))) {
-                    existingIds.add(propMap.getValue("id"))
+                    //If this seems to be a legit response and we aren't already keeping track of this particular light..
+                    if (propMap.containsKey("id") && !(lights.containsKey(propMap.get("id")!!))) {
+                        val lightAddress = URI.create(propMap.getValue("Location"))
+                        val light = Light(lightAddress)
+                        light.id = propMap.getValue("id")
+                        light.firmware_version = propMap.getValue("fw_ver")
+                        light.model = propMap.getValue("model")
+                        light.support = propMap.getValue("support").split(" ").toTypedArray()
+                        light.power = propMap.getValue("power") == "on"
+                        light.brightness = propMap.getValue("bright").toInt()
+                        light.color_mode = propMap.getValue("color_mode").toString().toInt()
+                        light.ct = propMap.getValue("ct").toInt()
+                        light.rgb = propMap.getValue("rgb").toInt()
+                        light.hue = propMap.getValue("hue").toInt()
+                        light.saturation = propMap.getValue("sat").toInt()
+                        light.name = propMap.getValue("name")
+                        existingIds.add(light.id!!)
+                        lights.put(light.id!!, light)
+                    } else if (propMap.containsKey("id") && (lights.containsKey(propMap.get("id")))) {
+                        existingIds.add(propMap.getValue("id"))
+                    }
                 }
-            }
 
-            //Make sure devices that has been, but is no longer discovered is removed from our internal list of active devices
-            val currentLightIds = lights.keys
-            currentLightIds.forEach { id ->
-                if (!existingIds.contains(id)) {
-                    Log.d("kYee","LightManager: YeeLight device with id $id not discovered, removing from internal light list")
-                    lights.remove(id)
+                //Make sure devices that has been, but is no longer discovered is removed from our internal list of active devices
+                val currentLightIds = lights.keys
+                currentLightIds.forEach { id ->
+                    if (!existingIds.contains(id)) {
+                        Log.d("kYee", "LightManager: YeeLight device with id $id not discovered, removing from internal light list")
+                        lights.remove(id)
+                    }
                 }
-            }
 
-            //DEBUG
-            Log.d("kYee","LightManager - all current lights: ${JSONArray(lights.keys).toString()}")
+                //DEBUG
+                Log.d("kYee", "LightManager - all current lights: ${JSONArray(lights.keys).toString()}")
+            }catch(e: Exception)
+            {
+                Log.e("kYee","Could nog discover devices - reason: ${e.message}")
+            }
             
             uiThread {
                 Log.d("kYee","LightManager - sending all discovered lights to caller")
