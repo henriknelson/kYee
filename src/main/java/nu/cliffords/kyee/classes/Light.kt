@@ -18,13 +18,18 @@ class Light internal constructor(val lightAddress: URI): LightStateChangeListene
     private var client: TCPClient? = null
     private var listeners: MutableList<LightStateChangeListener> = mutableListOf()
 
-    var name: String = ""
-    var id: String = ""
-    var model: String = ""
-    var firmware_version: String = ""
-    var support: Array<String> = emptyArray()
-    var power: Boolean = false
-    var brightness: Int = 0
+    var id: String? = null
+    var model: String? = null
+    var firmware_version: String? = null
+    var support: Array<String>? = null
+    var power: Boolean? = null
+    var brightness: Int? = null
+    var color_mode: Int? = null
+    var ct: Int? = null
+    var rgb: Int? = null
+    var hue: Int? = null
+    var saturation: Int? = null
+    var name: String? = null
 
     enum class ColorMode(val mode: Int) {
         COLOR(1),
@@ -114,18 +119,28 @@ class Light internal constructor(val lightAddress: URI): LightStateChangeListene
         params.forEach { paramName, paramValue ->
             Log.i("kYee","Param with name \"$paramName\" has changed to \"$paramValue\"")
         }
-        if (params.containsKey("name"))
-            this.name = params.getValue("name").toString()
-        if (params.containsKey("fw_ver"))
-            this.firmware_version = params.getValue("fw_ver").toString()
         if (params.containsKey("model"))
             this.model = params.getValue("model").toString()
+        if (params.containsKey("fw_ver"))
+            this.firmware_version = params.getValue("fw_ver").toString()
         if (params.containsKey("support"))
             this.support = params.getValue("support").toString().split(" ").toTypedArray()
         if (params.containsKey("power"))
             this.power = params.getValue("power") == "on"
         if (params.containsKey("bright"))
             this.brightness = params.getValue("bright").toString().toInt()
+        if (params.containsKey("color_mode"))
+            this.color_mode = params.getValue("color_mode").toString().toInt()
+        if (params.containsKey("ct"))
+            this.ct = params.getValue("ct").toString().toInt()
+        if (params.containsKey("rgb"))
+            this.rgb = params.getValue("rgb").toString().toInt()
+        if (params.containsKey("hue"))
+            this.hue = params.getValue("hue").toString().toInt()
+        if (params.containsKey("sat"))
+            this.saturation = params.getValue("sat").toString().toInt()
+        if (params.containsKey("name"))
+            this.name = params.getValue("name").toString()
         listeners.forEach { listener ->
             if(listener != null)
                 listener.onStateChanged(params)

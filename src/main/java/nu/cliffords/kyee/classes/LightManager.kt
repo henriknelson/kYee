@@ -45,14 +45,19 @@ class LightManager private constructor() {
                 if (propMap.containsKey("id") && !(lights.containsKey(propMap.get("id")!!))) {
                     val lightAddress = URI.create(propMap.getValue("Location"))
                     val light = Light(lightAddress)
-                    light.name = propMap.getValue("name")
                     light.id = propMap.getValue("id")
                     light.firmware_version = propMap.getValue("fw_ver")
                     light.model = propMap.getValue("model")
                     light.support = propMap.getValue("support").split(" ").toTypedArray()
                     light.power = propMap.getValue("power") == "on"
                     light.brightness = propMap.getValue("bright").toInt()
-                    lights.put(light.id,light)
+                    light.color_mode = propMap.getValue("color_mode").toString().toInt()
+                    light.ct = propMap.getValue("ct").toInt()
+                    light.rgb = propMap.getValue("rgb").toInt()
+                    light.hue = propMap.getValue("hue").toInt()
+                    light.saturation = propMap.getValue("sat").toInt()
+                    light.name = propMap.getValue("name")
+                    lights.put(light.id!!,light)
                 }
 
             }
