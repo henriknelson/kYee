@@ -12,7 +12,8 @@ import nu.cliffords.kyee.network.TCPClient
  */
 
 //This class represents a single Yeelight smart device
-//Can not be created expp
+//Can not be instantiated by anyone except module members
+
 class Light internal constructor(val lightAddress: URI): LightStateChangeListener {
 
     private var client: TCPClient? = null

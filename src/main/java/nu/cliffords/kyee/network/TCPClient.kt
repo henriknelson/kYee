@@ -14,24 +14,28 @@ import java.net.URI
  * Created by Henrik Nelson on 2017-08-15.
  */
 
+//Manages network communication with a Yeelight device
+//Listens for unsolicited communication from the device, and facilitates the sending and receiving of requests and responses to and from the device
 
-class TCPClient(val uri: URI, val stateChangeListener: LightStateChangeListener) {
+class TCPClient(val uri: URI,val stateChangeListener: LightStateChangeListener) {
 
     init {
-        listenToLightCommunication()
+        listenToDeviceNotifications()
     }
 
-    var mId: Int = 1
 
-    fun getId(): Int {
-        val returnId = this.mId
-        this.mId++
-        if (this.mId == 255)
-            this.mId = 1
+    var mTransactionId: Int = 1
+
+    fun getTransactionId(): Int {
+        val returnId = this.mTransactionId
+        this.mTransactionId++
+        if (this.mTransactionId == 255)
+            this.mTransactionId = 1
         return returnId
     }
 
-    fun listenToLightCommunication(){
+    //Itirates forever in a thread, listening for unsolicited communications from the device
+    fun listenToDeviceNotifications(){
 
         doAsync {
 
@@ -56,7 +60,6 @@ class TCPClient(val uri: URI, val stateChangeListener: LightStateChangeListener)
                 }catch(e:Exception) {
                     //Nuffin'
                 }
-
             }
         }
     }
@@ -65,7 +68,7 @@ class TCPClient(val uri: URI, val stateChangeListener: LightStateChangeListener)
 
     fun send(method: String, params: List<Any>, successListener: (JSONObject) -> Unit, errorListener: (String?) -> Unit){
 
-        val requestString = JSONObject("{\"id\":${getId()},\"method\":${method},\"params\":${JSONArray(params).toString()}}").toString()
+        val requestString = JSONObject("{\"id\":${getTransactionId()},\"method\":${method},\"params\":${JSONArray(params).toString()}}").toString()
 
         doAsync {
 
@@ -73,15 +76,25 @@ class TCPClient(val uri: URI, val stateChangeListener: LightStateChangeListener)
 
             socket.soTimeout = 2000
             try {
+
                 val outToServer = DataOutputStream(socket.getOutputStream())
                 val inFromServer = BufferedReader(InputStreamReader(socket.getInputStream()))
+
                 outToServer.writeBytes(requestString+"\r\n")
-                Log.i("kYee","-> $requestString")
+                Log.i("kYee","Light<${uri.host}:${uri.port}> -> $requestString")
                 val responseString = inFromServer.readLine()
-                Log.i("kYee","<- $responseString")
+                Log.i("kYee","Light<${uri.host}:${uri.port}> <- $responseString")
+
                 val responseJson = JSONObject(responseString)
-                uiThread {
-                    successListener(responseJson)
+
+                if(responseJson.has("result")){
+                    uiThread {
+                        successListener(responseJson)
+                    }
+                }else if(responseJson.has("error"))
+                {
+                    val errorMessage = responseJson.getJSONObject("error").getString("message")
+                    throw Exception(errorMessage)
                 }
             }catch(e: Exception){
                 uiThread {

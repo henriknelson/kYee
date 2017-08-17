@@ -3,6 +3,7 @@ package nu.cliffords.kyee.classes
 import android.util.Log
 import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.uiThread
+import org.json.JSONArray
 import java.net.*
 
 /**
@@ -10,16 +11,18 @@ import java.net.*
  */
 class LightManager private constructor() {
 
-    private object Holder { val INSTANCE = LightManager() }
+    private object Holder {
+        val INSTANCE = LightManager()
+    }
 
     companion object {
         val instance: LightManager by lazy { Holder.INSTANCE }
     }
 
+    private val lights: MutableMap<String, Light> = mutableMapOf()
+
     val MCAST_ADDR = "239.255.255.250"
     val MCAST_PORT = 1982
-
-    private val lights: MutableMap<String, Light> = mutableMapOf()
 
     fun getLights(listener: (List<Light>)->Unit, timeoutTime: Int = 2){
 
@@ -77,6 +80,9 @@ class LightManager private constructor() {
                 }
             }
 
+            //DEBUG
+            Log.d("kYee","LightManager - all current lights: ${JSONArray(lights.keys).toString()}")
+            
             uiThread {
                 Log.d("kYee","LightManager - sending all discovered lights to caller")
                 listener(lights.values.toList())
