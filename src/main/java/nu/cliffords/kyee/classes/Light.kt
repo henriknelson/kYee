@@ -12,27 +12,29 @@ import nu.cliffords.kyee.network.TCPClient
  */
 
 //This class represents a single Yeelight smart device
-//Can not be instantiated by anyone except module members
+//Can not be instantiated by anyone except module members (e.g. LightManager)
 
 class Light internal constructor(val lightAddress: URI): LightStateChangeListener {
 
     private var client: TCPClient? = null
     private var listeners: MutableList<LightStateChangeListener> = mutableListOf()
 
-    var id: String? = null
-    var model: String? = null
-    var firmware_version: String? = null
-    var support: Array<String>? = null
-    var power: Boolean? = null
-    var brightness: Int? = null
-    var color_mode: Int? = null
-    var ct: Int? = null
-    var rgb: Int? = null
-    var hue: Int? = null
-    var saturation: Int? = null
-    var name: String? = null
+    var id: String = ""
+    var model: String = ""
+    var firmware_version: String = ""
+    var support: Array<String> = emptyArray()
+    var power: Boolean = false
+    var brightness: Int = 100
+    var color_mode: Int = 1
+    var ct: Int = 4000
+    var rgb: Int = 0
+    var hue: Int = 100
+    var saturation: Int = 100
+    var name: String = ""
+    var flowing: Boolean = false
+    var flow_parameters: Array<String> = emptyArray()
 
-    enum class ColorMode(val mode: Int) {
+    enum class ColorMode(val value: Int) {
         COLOR(1),
         COLOR_TEMP(2),
         HSV(3)
@@ -44,6 +46,27 @@ class Light internal constructor(val lightAddress: URI): LightStateChangeListene
         SMOOTH("smooth")
     }
 
+    enum class FlowStopAction(val value: Int)
+    {
+        LED_RECOVERY(0),    //0 means smart LED recover to the state before the color flow started.
+        LED_STAY(1),        //1 means smart LED stay at the state when the flow is stopped.
+        LED_TURNOFF(2)      //2 means turn off the smart LED after the flow is stopped.
+    }
+
+    companion object {
+        fun getIntFromColor(Red: Int, Green: Int, Blue: Int): Int {
+            var Red = Red
+            var Green = Green
+            var Blue = Blue
+            Red = Red shl 16 and 0x00FF0000 //Shift red 16-bits and mask out other stuff
+            Green = Green shl 8 and 0x0000FF00 //Shift Green 8-bits and mask out other stuff
+            Blue = Blue and 0x000000FF //Mask out anything not blue.
+
+            val retValue = 0x000000.toInt() or Red or Green or Blue //0xFF000000 for 100% Alpha. Bitwise OR everything together.
+            return retValue
+        }
+    }
+
     init {
         client = TCPClient(lightAddress,this)
     }
@@ -53,7 +76,7 @@ class Light internal constructor(val lightAddress: URI): LightStateChangeListene
     }
 
     fun getProperties(properties: Array<String>, listener: (JSONObject) -> Unit) {
-        val params = emptyList<String>()
+        val params = properties.toList()
         client!!.send("get_prop",params,
                 { jsonResponse ->
                     listener(jsonResponse)
@@ -83,6 +106,11 @@ class Light internal constructor(val lightAddress: URI): LightStateChangeListene
                 { errorMessage ->
                     Log.e("kYee","Could not set RGB - reason: $errorMessage")
                 })
+    }
+
+    fun setRGB(red: Int, green: Int, blue:Int, effect: LightEffect, duration:Int, listener: (JSONObject) -> Unit) {
+        val colorRgb = getIntFromColor(red,green,blue)
+        setRGB(colorRgb,effect,duration,listener)
     }
 
     fun setHSV(hue: Int, saturation: Int, effect: LightEffect, duration: Int, listener: (JSONObject) -> Unit) {
@@ -143,16 +171,19 @@ class Light internal constructor(val lightAddress: URI): LightStateChangeListene
                 })
     }
 
+    fun startColorFlow(count: Int, action: FlowStopAction, states:List<FlowState>, listener: (JSONObject) -> Unit) {
+
+        val params = arrayListOf<Any>(count,action.value,states.joinToString(","))
+        client!!.send("start_cf",params,
+                { jsonResponse ->
+                    listener(jsonResponse)
+                },
+                { errorMessage ->
+                    Log.e("kYee","Could not start color flow - reason: $errorMessage")
+                })
+    }
 
 
-
-
-    /*fun setColor(red: Int, green: Int, blue:Int, effect: LightEffect, duration:Int, listener: (JSONObject) -> Unit) {
-        var rgb = red
-        rgb = (rgb shl 8) + green
-        rgb = (rgb shl 8) + blue
-        setColor(rgb,effect,duration,listener)
-    }*/
 
 
 
@@ -194,6 +225,9 @@ class Light internal constructor(val lightAddress: URI): LightStateChangeListene
             this.saturation = params.getValue("sat").toString().toInt()
         if (params.containsKey("name"))
             this.name = params.getValue("name").toString()
+        if (params.containsKey("flowing"))
+            this.flowing = params.getValue("flowing").toString().equals("1")
+
         listeners.forEach { listener ->
             if(listener != null)
                 listener.onStateChanged(params)
