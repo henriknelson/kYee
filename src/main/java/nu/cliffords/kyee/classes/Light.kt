@@ -132,6 +132,17 @@ class Light internal constructor(val lightAddress: URI): LightStateChangeListene
                 })
     }
 
+    fun setDefault(listener: (JSONObject) -> Unit) {
+        val params = emptyList<String>()
+        client!!.send("set_default",params,
+                { jsonResponse ->
+                    listener(jsonResponse)
+                },
+                { errorMessage ->
+                    Log.e("kYee","Could not set default - reason: $errorMessage")
+                })
+    }
+
 
 
 
