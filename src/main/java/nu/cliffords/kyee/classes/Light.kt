@@ -63,6 +63,17 @@ class Light internal constructor(val lightAddress: URI): LightStateChangeListene
                 })
     }
 
+    fun setColorTemperature(colorTemperature: Int, effect: LightEffect, duration:Int, listener: (JSONObject) -> Unit) {
+        val params = arrayListOf<Any>(if(colorTemperature < 1700) 1700 else if(colorTemperature > 6500) 6500 else colorTemperature,effect.value,duration)
+        client!!.send("set_ct_abx",params,
+                { jsonResponse ->
+                    listener(jsonResponse)
+                },
+                { errorMessage ->
+                    Log.e("kYee","Could not set power - reason: $errorMessage")
+                })
+    }
+
     fun setPower(state: Boolean, effect: LightEffect, duration:Int, listener: (JSONObject) -> Unit) {
         var stateString = if (state) "on" else "off"
         val params = arrayListOf<Any>(stateString,effect.value,duration)
