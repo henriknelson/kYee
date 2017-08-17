@@ -1,5 +1,6 @@
 package nu.cliffords.kyee.classes
 
+import android.util.Log
 import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.uiThread
 import java.net.*
@@ -28,9 +29,12 @@ class LightManager private constructor() {
             socket.soTimeout = 1000
             socket.joinGroup(InetAddress.getByName(MCAST_ADDR) )
 
+            Log.d("kYee","LightManager - Sending multicast discovery message")
             sendDiscoveryMessage(socket)
 
             val responseList = getDiscoveryResponses(socket,timeoutTime)
+
+            val existingIds = mutableListOf<String>()
 
             //Parse responses to see if we have any new lights
             responseList.forEach { response ->
@@ -57,12 +61,24 @@ class LightManager private constructor() {
                     light.hue = propMap.getValue("hue").toInt()
                     light.saturation = propMap.getValue("sat").toInt()
                     light.name = propMap.getValue("name")
+                    existingIds.add(light.id!!)
                     lights.put(light.id!!,light)
+                }else if(propMap.containsKey("id") && (lights.containsKey(propMap.get("id")))) {
+                    existingIds.add(propMap.getValue("id"))
                 }
+            }
 
+            //Make sure devices that has been, but is no longer discovered is removed from our internal list of active devices
+            val currentLightIds = lights.keys
+            currentLightIds.forEach { id ->
+                if (!existingIds.contains(id)) {
+                    Log.d("kYee","LightManager: YeeLight device with id $id not discovered, removing from internal light list")
+                    lights.remove(id)
+                }
             }
 
             uiThread {
+                Log.d("kYee","LightManager - sending all discovered lights to caller")
                 listener(lights.values.toList())
             }
 
@@ -75,6 +91,7 @@ class LightManager private constructor() {
         val sendData = msg.toByteArray(charset("UTF-8"))
         val addr = InetAddress.getByName(MCAST_ADDR)
         val sendPacket = DatagramPacket(sendData, sendData.size, addr, MCAST_PORT)
+        Log.d("kYee","LightManager - Sending multicast discovery message: $msg")
         socket.send(sendPacket)
     }
 
@@ -94,6 +111,7 @@ class LightManager private constructor() {
 
                 //Store away the string representations of the lights
                 val responseString = String(datagram.getData(), 0, datagram.getLength())
+                Log.d("kYee","Received multicast response: $responseString")
                 responseList.add(responseString)
 
             }catch(e: Exception) {
@@ -102,7 +120,7 @@ class LightManager private constructor() {
                     break
             }
         }
-        return responseList.toList()
+        return responseList.toSet().toList() //Make sure duplicates are removed..
     }
 
 }
