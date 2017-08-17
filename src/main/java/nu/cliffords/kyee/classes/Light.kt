@@ -74,15 +74,27 @@ class Light internal constructor(val lightAddress: URI): LightStateChangeListene
                 })
     }
 
-    fun setPower(state: Boolean, effect: LightEffect, duration:Int, listener: (JSONObject) -> Unit) {
-        var stateString = if (state) "on" else "off"
-        val params = arrayListOf<Any>(stateString,effect.value,duration)
-        client!!.send("set_power",params,
+    fun setRGB(color: Int, effect: LightEffect, duration: Int, listener: (JSONObject) -> Unit) {
+        val params = arrayListOf<Any>(if(color < 0) 0 else if(color > 0xFFFFFF) 0xFFFFFF else color,effect.value,duration)
+        client!!.send("set_rgb",params,
                 { jsonResponse ->
                     listener(jsonResponse)
                 },
                 { errorMessage ->
-                    Log.e("kYee","Could not set power - reason: $errorMessage")
+                    Log.e("kYee","Could not set RGB - reason: $errorMessage")
+                })
+    }
+
+    fun setHSV(hue: Int, saturation: Int, effect: LightEffect, duration: Int, listener: (JSONObject) -> Unit) {
+        val safeHue = if(hue < 0) 0 else if(hue > 359) 359 else hue
+        val safeSat = if(saturation < 0) 0 else if(saturation > 100) 100 else saturation
+        val params = arrayListOf<Any>(safeHue,safeSat,effect.value,duration)
+        client!!.send("set_hsv",params,
+                { jsonResponse ->
+                    listener(jsonResponse)
+                },
+                { errorMessage ->
+                    Log.e("kYee","Could not set RGB - reason: $errorMessage")
                 })
     }
 
@@ -97,34 +109,30 @@ class Light internal constructor(val lightAddress: URI): LightStateChangeListene
                 })
     }
 
-    fun setColor(color: Int, effect: LightEffect, duration: Int, listener: (JSONObject) -> Unit) {
-        val params = arrayListOf<Any>(color,effect.value,duration)
-        client!!.send("set_rgb",params,
+    fun setPower(state: Boolean, effect: LightEffect, duration:Int, listener: (JSONObject) -> Unit) {
+        var stateString = if (state) "on" else "off"
+        val params = arrayListOf<Any>(stateString,effect.value,duration)
+        client!!.send("set_power",params,
                 { jsonResponse ->
                     listener(jsonResponse)
                 },
                 { errorMessage ->
-                    Log.e("kYee","Could not set RGB - reason: $errorMessage")
+                    Log.e("kYee","Could not set power - reason: $errorMessage")
                 })
     }
 
-    fun setColor(red: Int, green: Int, blue:Int, effect: LightEffect, duration:Int, listener: (JSONObject) -> Unit) {
+
+
+
+
+    /*fun setColor(red: Int, green: Int, blue:Int, effect: LightEffect, duration:Int, listener: (JSONObject) -> Unit) {
         var rgb = red
         rgb = (rgb shl 8) + green
         rgb = (rgb shl 8) + blue
         setColor(rgb,effect,duration,listener)
-    }
+    }*/
 
-    fun setHSV(hue: Int, saturation: Int, effect: LightEffect, duration: Int, listener: (JSONObject) -> Unit) {
-        val params = arrayListOf<Any>(hue,saturation,effect.value,duration)
-        client!!.send("set_hsv",params,
-                { jsonResponse ->
-                    listener(jsonResponse)
-                },
-                { errorMessage ->
-                    Log.e("kYee","Could not set RGB - reason: $errorMessage")
-                })
-    }
+
 
     fun setName(name: String, listener: (JSONObject) -> Unit) {
         //val encodedName = Base64.encodeToString(name.toByteArray(Charset.forName("UTF-8")),Base64.DEFAULT);
