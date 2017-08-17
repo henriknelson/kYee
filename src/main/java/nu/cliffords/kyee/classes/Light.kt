@@ -70,7 +70,7 @@ class Light internal constructor(val lightAddress: URI): LightStateChangeListene
                     listener(jsonResponse)
                 },
                 { errorMessage ->
-                    Log.e("kYee","Could not set power - reason: $errorMessage")
+                    Log.e("kYee","Could not set color temperature - reason: $errorMessage")
                 })
     }
 
@@ -94,7 +94,7 @@ class Light internal constructor(val lightAddress: URI): LightStateChangeListene
                     listener(jsonResponse)
                 },
                 { errorMessage ->
-                    Log.e("kYee","Could not set RGB - reason: $errorMessage")
+                    Log.e("kYee","Could not set HSV - reason: $errorMessage")
                 })
     }
 
@@ -118,6 +118,17 @@ class Light internal constructor(val lightAddress: URI): LightStateChangeListene
                 },
                 { errorMessage ->
                     Log.e("kYee","Could not set power - reason: $errorMessage")
+                })
+    }
+
+    fun toggle(listener: (JSONObject) -> Unit) {
+        val params = emptyList<String>()
+        client!!.send("toggle",params,
+                { jsonResponse ->
+                    listener(jsonResponse)
+                },
+                { errorMessage ->
+                    Log.e("kYee","Could not toggle power - reason: $errorMessage")
                 })
     }
 
