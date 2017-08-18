@@ -46,7 +46,7 @@ class Light internal constructor(val lightAddress: URI): LightStateChangeListene
         SMOOTH("smooth")
     }
 
-    enum class FlowStopAction(val value: Int)
+    enum class FlowAction(val value: Int)
     {
         LED_RECOVERY(0),    //0 means smart LED recover to the state before the color flow started.
         LED_STAY(1),        //1 means smart LED stay at the state when the flow is stopped.
@@ -171,7 +171,7 @@ class Light internal constructor(val lightAddress: URI): LightStateChangeListene
                 })
     }
 
-    fun startColorFlow(count: Int, action: FlowStopAction, states:List<FlowState>, listener: (JSONObject) -> Unit) {
+    fun startColorFlow(count: Int, action: FlowAction, states:List<FlowState>, listener: (JSONObject) -> Unit) {
 
         val params = arrayListOf<Any>(count,action.value,states.joinToString(","))
         client!!.send("start_cf",params,
