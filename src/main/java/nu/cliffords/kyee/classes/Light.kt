@@ -1,16 +1,15 @@
 package nu.cliffords.kyee.classes
 
 import android.util.Log
-import org.json.JSONObject
-import java.net.*
+import nu.cliffords.kyee.classes.Flow.FlowState
 import nu.cliffords.kyee.interfaces.LightStateChangeListener
 import nu.cliffords.kyee.network.TCPClient
-import nu.cliffords.kyee.classes.Flow.FlowState
+import org.json.JSONObject
+import java.net.URI
 
 /**
  * Created by Henrik Nelson on 2017-08-14.
  */
-
 
 //This class represents a single Yeelight smart device
 //Can not be instantiated by anyone except module members (e.g. LightManager)
@@ -54,21 +53,13 @@ class Light internal constructor(lightAddress: URI): LightStateChangeListener {
         LED_TURNOFF(2)      //2 means turn off the smart LED after the flow is stopped.
     }
 
-    companion object {
-        fun getIntFromColor(Red: Int, Green: Int, Blue: Int): Int {
-            val r = Red shl 16 and 0x00FF0000 //Shift red 16-bits and mask out other stuff
-            val g = Green shl 8 and 0x0000FF00 //Shift Green 8-bits and mask out other stuff
-            val b = Blue and 0x000000FF //Mask out anything not blue.
-            return 0x000000 or r or g or b //0xFF000000 for 100% Alpha. Bitwise OR everything together.
-        }
-    }
-
     init {
         client = TCPClient(lightAddress,this)
     }
 
     fun registerStateListener(listener: LightStateChangeListener) {
-        listeners.add(listener)
+        if(!listeners.contains(listener))
+            listeners.add(listener)
     }
 
     fun getProperties(properties: Array<String>, listener: (JSONObject) -> Unit) {
@@ -105,7 +96,7 @@ class Light internal constructor(lightAddress: URI): LightStateChangeListener {
     }
 
     fun setRGB(red: Int, green: Int, blue:Int, effect: LightEffect, duration:Int, listener: (JSONObject) -> Unit) {
-        val colorRgb = getIntFromColor(red,green,blue)
+        val colorRgb = Helpers.getIntFromColor(red,green,blue)
         setRGB(colorRgb,effect,duration,listener)
     }
 
@@ -179,10 +170,6 @@ class Light internal constructor(lightAddress: URI): LightStateChangeListener {
                 })
     }
 
-
-
-
-
     fun setName(name: String, listener: (JSONObject) -> Unit) {
         //val encodedName = Base64.encodeToString(name.toByteArray(Charset.forName("UTF-8")),Base64.DEFAULT);
         val params = arrayListOf<Any>(name)
@@ -229,48 +216,4 @@ class Light internal constructor(lightAddress: URI): LightStateChangeListener {
         }
     }
 
-
-    /*
-    private fun getProp(propName: String, listener: (String) -> Unit) {
-        TCPClient.send(this.uri!!,"get_prop",arrayListOf<String>(propName),
-                { jsonResponse ->
-                    listener(jsonResponse.getJSONArray("result").getString(0))
-                },{ errorMessage ->
-            Log.e("kYee","Could not get property - reason: $errorMessage")
-        })
-    }
-
-
-
-    fun getPower(listener: (Boolean) -> Unit){
-        this.getProp("power",{ stringValue ->
-            listener(stringValue.equals("on"))
-        })
-    }
-
-
-
-    fun getBrightness(listener: (Int) -> Unit){
-        this.getProp("bright",{ stringValue ->
-            listener(stringValue.toInt())
-        })
-    }
-
-    fun setName(name: String, listener: (JSONObject) -> Unit) {
-        //val encodedName = Base64.encodeToString(name.toByteArray(Charset.forName("UTF-8")),Base64.DEFAULT);
-        val params = arrayListOf<Any>(name)
-        TCPClient.send(this.uri!!,"set_name",params,
-                { jsonResponse ->
-                    this.name = name
-                    listener(jsonResponse)
-                },{ errorMessage ->
-            Log.e("kYee","Could not set name - reason: $errorMessage")
-        })
-    }
-
-    fun getName(listener: (String) -> Unit){
-        this.getProp("name",{ stringValue ->
-            listener(stringValue)
-        })
-    }*/
 }

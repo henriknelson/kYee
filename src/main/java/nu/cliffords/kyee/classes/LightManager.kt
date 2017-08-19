@@ -4,7 +4,10 @@ import android.util.Log
 import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.uiThread
 import org.json.JSONArray
-import java.net.*
+import java.net.DatagramPacket
+import java.net.InetAddress
+import java.net.MulticastSocket
+import java.net.URI
 
 /**
  * Created by Henrik Nelson on 2017-08-15.
@@ -94,6 +97,10 @@ class LightManager private constructor() {
             }
 
         }
+    }
+
+    fun getLightFromId(lightId: String): Light? {
+        return this.lights[lightId]
     }
 
     //Send multicast message that triggers a response in Yeelight devices
