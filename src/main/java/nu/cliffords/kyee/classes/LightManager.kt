@@ -21,8 +21,8 @@ class LightManager private constructor() {
 
     private val lights: MutableMap<String, Light> = mutableMapOf()
 
-    val MCAST_ADDR = "239.255.255.250"
-    val MCAST_PORT = 1982
+    private val MCAST_ADDR = "239.255.255.250"
+    private val MCAST_PORT = 1982
 
     fun getLights(listener: (List<Light>)->Unit, timeoutTime: Int = 2){
 
@@ -44,13 +44,13 @@ class LightManager private constructor() {
                 responseList.forEach { response ->
 
                     //Make a map of all the interesting key/value pairs in the response
-                    var propMap = response.split("\r\n").filter { propertyRow -> propertyRow.contains(":") }.associateBy(
+                    val propMap = response.split("\r\n").filter { propertyRow -> propertyRow.contains(":") }.associateBy(
                             { it.split(delimiters = ":", ignoreCase = false, limit = 2)[0] },
                             { it.split(delimiters = ":", ignoreCase = false, limit = 2)[1].trim() }
                     )
 
                     //If this seems to be a legit response and we aren't already keeping track of this particular light..
-                    if (propMap.containsKey("id") && !(lights.containsKey(propMap.get("id")!!))) {
+                    if (propMap.containsKey("id") && !(lights.containsKey(propMap["id"]))) {
                         val lightAddress = URI.create(propMap.getValue("Location"))
                         val light = Light(lightAddress)
                         light.id = propMap.getValue("id")
@@ -65,9 +65,9 @@ class LightManager private constructor() {
                         light.hue = propMap.getValue("hue").toInt()
                         light.saturation = propMap.getValue("sat").toInt()
                         light.name = propMap.getValue("name")
-                        existingIds.add(light.id!!)
-                        lights.put(light.id!!, light)
-                    } else if (propMap.containsKey("id") && (lights.containsKey(propMap.get("id")))) {
+                        existingIds.add(light.id)
+                        lights.put(light.id, light)
+                    } else if (propMap.containsKey("id") && (lights.containsKey(propMap["id"]))) {
                         existingIds.add(propMap.getValue("id"))
                     }
                 }
@@ -82,7 +82,7 @@ class LightManager private constructor() {
                 }
 
                 //DEBUG
-                Log.d("kYee", "LightManager - all current lights: ${JSONArray(lights.keys).toString()}")
+                Log.d("kYee", "LightManager - all current lights: ${JSONArray(lights.keys)}")
             }catch(e: Exception)
             {
                 Log.e("kYee","Could nog discover devices - reason: ${e.message}")
@@ -121,7 +121,7 @@ class LightManager private constructor() {
                 socket.receive(datagram)
 
                 //Store away the string representations of the lights
-                val responseString = String(datagram.getData(), 0, datagram.getLength())
+                val responseString = String(datagram.data, 0, datagram.length)
                 Log.d("kYee","Received multicast response: $responseString")
                 responseList.add(responseString)
 

@@ -17,16 +17,16 @@ import java.net.URI
 //Manages network communication with a Yeelight device
 //Listens for unsolicited communication from the device, and facilitates the sending and receiving of requests and responses to and from the device
 
-class TCPClient(val uri: URI,val stateChangeListener: LightStateChangeListener) {
+class TCPClient(private val uri: URI,private val stateChangeListener: LightStateChangeListener) {
 
     init {
         listenToDeviceNotifications()
     }
 
 
-    var mTransactionId: Int = 1
+    private var mTransactionId: Int = 1
 
-    fun getTransactionId(): Int {
+    private fun getTransactionId(): Int {
         val returnId = this.mTransactionId
         this.mTransactionId++
         if (this.mTransactionId == 255)
@@ -34,8 +34,8 @@ class TCPClient(val uri: URI,val stateChangeListener: LightStateChangeListener) 
         return returnId
     }
 
-    //Itirates forever in a thread, listening for unsolicited communications from the device
-    fun listenToDeviceNotifications(){
+    //Iterates forever in a thread, listening for unsolicited communications from the device
+    private fun listenToDeviceNotifications(){
 
         doAsync {
 
@@ -47,7 +47,7 @@ class TCPClient(val uri: URI,val stateChangeListener: LightStateChangeListener) 
                 try {
                     val responseString = inFromServer.readLine()
                     val responseJson = JSONObject(responseString)
-                    if(responseJson.getString("method").equals("props")){
+                    if(responseJson.getString("method") == "props"){
                         val params = responseJson.getJSONObject("params")
                         val paramMap: MutableMap<String, Any> = linkedMapOf()
                         for (key in params.keys()) {
@@ -68,7 +68,7 @@ class TCPClient(val uri: URI,val stateChangeListener: LightStateChangeListener) 
 
     fun send(method: String, params: List<Any>, successListener: (JSONObject) -> Unit, errorListener: (String?) -> Unit){
 
-        val requestString = JSONObject("{\"id\":${getTransactionId()},\"method\":${method},\"params\":${JSONArray(params).toString()}}").toString()
+        val requestString = JSONObject("{\"id\":${getTransactionId()},\"method\":$method,\"params\":${JSONArray(params)}}").toString()
 
         doAsync {
 

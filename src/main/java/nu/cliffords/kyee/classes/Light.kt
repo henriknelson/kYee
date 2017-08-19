@@ -5,16 +5,17 @@ import org.json.JSONObject
 import java.net.*
 import nu.cliffords.kyee.interfaces.LightStateChangeListener
 import nu.cliffords.kyee.network.TCPClient
-
+import nu.cliffords.kyee.classes.Flow.FlowState
 
 /**
  * Created by Henrik Nelson on 2017-08-14.
  */
 
+
 //This class represents a single Yeelight smart device
 //Can not be instantiated by anyone except module members (e.g. LightManager)
 
-class Light internal constructor(val lightAddress: URI): LightStateChangeListener {
+class Light internal constructor(lightAddress: URI): LightStateChangeListener {
 
     private var client: TCPClient? = null
     private var listeners: MutableList<LightStateChangeListener> = mutableListOf()
@@ -55,15 +56,10 @@ class Light internal constructor(val lightAddress: URI): LightStateChangeListene
 
     companion object {
         fun getIntFromColor(Red: Int, Green: Int, Blue: Int): Int {
-            var Red = Red
-            var Green = Green
-            var Blue = Blue
-            Red = Red shl 16 and 0x00FF0000 //Shift red 16-bits and mask out other stuff
-            Green = Green shl 8 and 0x0000FF00 //Shift Green 8-bits and mask out other stuff
-            Blue = Blue and 0x000000FF //Mask out anything not blue.
-
-            val retValue = 0x000000.toInt() or Red or Green or Blue //0xFF000000 for 100% Alpha. Bitwise OR everything together.
-            return retValue
+            val r = Red shl 16 and 0x00FF0000 //Shift red 16-bits and mask out other stuff
+            val g = Green shl 8 and 0x0000FF00 //Shift Green 8-bits and mask out other stuff
+            val b = Blue and 0x000000FF //Mask out anything not blue.
+            return 0x000000 or r or g or b //0xFF000000 for 100% Alpha. Bitwise OR everything together.
         }
     }
 
@@ -87,7 +83,7 @@ class Light internal constructor(val lightAddress: URI): LightStateChangeListene
     }
 
     fun setColorTemperature(colorTemperature: Int, effect: LightEffect, duration:Int, listener: (JSONObject) -> Unit) {
-        val params = arrayListOf<Any>(if(colorTemperature < 1700) 1700 else if(colorTemperature > 6500) 6500 else colorTemperature,effect.value,duration)
+        val params = arrayListOf(if(colorTemperature < 1700) 1700 else if(colorTemperature > 6500) 6500 else colorTemperature,effect.value,duration)
         client!!.send("set_ct_abx",params,
                 { jsonResponse ->
                     listener(jsonResponse)
@@ -98,7 +94,7 @@ class Light internal constructor(val lightAddress: URI): LightStateChangeListene
     }
 
     fun setRGB(color: Int, effect: LightEffect, duration: Int, listener: (JSONObject) -> Unit) {
-        val params = arrayListOf<Any>(if(color < 0) 0 else if(color > 0xFFFFFF) 0xFFFFFF else color,effect.value,duration)
+        val params = arrayListOf(if(color < 0) 0 else if(color > 0xFFFFFF) 0xFFFFFF else color,effect.value,duration)
         client!!.send("set_rgb",params,
                 { jsonResponse ->
                     listener(jsonResponse)
@@ -116,7 +112,7 @@ class Light internal constructor(val lightAddress: URI): LightStateChangeListene
     fun setHSV(hue: Int, saturation: Int, effect: LightEffect, duration: Int, listener: (JSONObject) -> Unit) {
         val safeHue = if(hue < 0) 0 else if(hue > 359) 359 else hue
         val safeSat = if(saturation < 0) 0 else if(saturation > 100) 100 else saturation
-        val params = arrayListOf<Any>(safeHue,safeSat,effect.value,duration)
+        val params = arrayListOf(safeHue,safeSat,effect.value,duration)
         client!!.send("set_hsv",params,
                 { jsonResponse ->
                     listener(jsonResponse)
@@ -127,7 +123,7 @@ class Light internal constructor(val lightAddress: URI): LightStateChangeListene
     }
 
     fun setBrightness(brightness: Int, effect: LightEffect, duration:Int, listener: (JSONObject) -> Unit) {
-        val params = arrayListOf<Any>(if(brightness <= 0) 1 else if(brightness > 100) 100 else brightness,effect.value,duration)
+        val params = arrayListOf(if(brightness <= 0) 1 else if(brightness > 100) 100 else brightness,effect.value,duration)
         client!!.send("set_bright",params,
                 { jsonResponse ->
                     listener(jsonResponse)
@@ -138,8 +134,8 @@ class Light internal constructor(val lightAddress: URI): LightStateChangeListene
     }
 
     fun setPower(state: Boolean, effect: LightEffect, duration:Int, listener: (JSONObject) -> Unit) {
-        var stateString = if (state) "on" else "off"
-        val params = arrayListOf<Any>(stateString,effect.value,duration)
+        val stateString = if (state) "on" else "off"
+        val params = arrayListOf(stateString,effect.value,duration)
         client!!.send("set_power",params,
                 { jsonResponse ->
                     listener(jsonResponse)
@@ -173,7 +169,7 @@ class Light internal constructor(val lightAddress: URI): LightStateChangeListene
 
     fun startColorFlow(count: Int, action: FlowAction, states:List<FlowState>, listener: (JSONObject) -> Unit) {
 
-        val params = arrayListOf<Any>(count,action.value,states.joinToString(","))
+        val params = arrayListOf(count,action.value,states.joinToString(","))
         client!!.send("start_cf",params,
                 { jsonResponse ->
                     listener(jsonResponse)
@@ -226,11 +222,10 @@ class Light internal constructor(val lightAddress: URI): LightStateChangeListene
         if (params.containsKey("name"))
             this.name = params.getValue("name").toString()
         if (params.containsKey("flowing"))
-            this.flowing = params.getValue("flowing").toString().equals("1")
+            this.flowing = params.getValue("flowing").toString() == "1"
 
         listeners.forEach { listener ->
-            if(listener != null)
-                listener.onStateChanged(params)
+            listener.onStateChanged(params)
         }
     }
 
