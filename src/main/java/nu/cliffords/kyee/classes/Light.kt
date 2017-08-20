@@ -34,10 +34,16 @@ class Light internal constructor(lightAddress: URI): LightStateChangeListener {
     var flowing: Boolean = false
     var flow_parameters: Array<String> = emptyArray()
 
-    enum class ColorMode(val value: Int) {
+    enum class ColorMode(val value: Int)
+    {
         COLOR(1),
         COLOR_TEMP(2),
-        HSV(3)
+        HSV(3);
+
+        companion object {
+            private val map = ColorMode.values().associateBy(ColorMode::value);
+            fun fromInt(type: Int) = map[type]
+        }
     }
 
     enum class LightEffect(val value: String)
@@ -50,7 +56,12 @@ class Light internal constructor(lightAddress: URI): LightStateChangeListener {
     {
         LED_RECOVERY(0),    //0 means smart LED recover to the state before the color flow started.
         LED_STAY(1),        //1 means smart LED stay at the state when the flow is stopped.
-        LED_TURNOFF(2)      //2 means turn off the smart LED after the flow is stopped.
+        LED_TURNOFF(2);      //2 means turn off the smart LED after the flow is stopped.
+
+        companion object {
+            private val map = FlowAction.values().associateBy(FlowAction::value);
+            fun fromInt(type: Int) = map[type]
+        }
     }
 
     init {
