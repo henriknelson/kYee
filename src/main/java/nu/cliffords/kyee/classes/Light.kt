@@ -181,6 +181,17 @@ class Light internal constructor(lightAddress: URI): LightStateChangeListener {
                 })
     }
 
+    fun stopColorFlow(listener: (JSONObject) -> Unit) {
+
+        client!!.send("stop_cf", emptyList(),
+                { jsonResponse ->
+                    listener(jsonResponse)
+                },
+                { errorMessage ->
+                    Log.e("kYee","Could not stop color flow - reason: $errorMessage")
+                })
+    }
+
     fun setName(name: String, listener: (JSONObject) -> Unit) {
         //val encodedName = Base64.encodeToString(name.toByteArray(Charset.forName("UTF-8")),Base64.DEFAULT);
         val params = arrayListOf<Any>(name)
