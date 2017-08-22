@@ -27,7 +27,7 @@ class LightManager private constructor() {
     private val MCAST_ADDR = "239.255.255.250"
     private val MCAST_PORT = 1982
 
-    fun getLights(listener: (List<Light>)->Unit, timeoutTime: Int = 2){
+    fun getLights(listener: (List<Light>)->Unit, timeoutTime: Int = 4){
 
         doAsync {
 
@@ -75,11 +75,11 @@ class LightManager private constructor() {
                     }
                 }
 
-                //Make sure devices that has been, but is no longer discovered is removed from our internal list of active devices
-                val currentLightIds = lights.keys
-                currentLightIds.forEach { id ->
+                //Make sure devices that has, but is no longer responding to discovery packages, is removed from our internal list of active devices
+                val currentLightIds = lights.keys.toList()
+                for(id in currentLightIds){
                     if (!existingIds.contains(id)) {
-                        Log.d("kYee", "LightManager: YeeLight device with id $id not discovered, removing from internal light list")
+                        Log.d("kYee", "LightManager: existing YeeLight device with id $id not discovered now, removing from internal light list")
                         lights.remove(id)
                     }
                 }
@@ -88,7 +88,7 @@ class LightManager private constructor() {
                 Log.d("kYee", "LightManager - all current lights: ${JSONArray(lights.keys)}")
             }catch(e: Exception)
             {
-                Log.e("kYee","Could nog discover devices - reason: ${e.message}")
+                Log.e("kYee","Could not discover devices - reason: ${e.message}")
             }
             
             uiThread {
@@ -125,12 +125,14 @@ class LightManager private constructor() {
                 //Receive responses from all lights in the network
                 val buffer = ByteArray(1024)
                 val datagram = DatagramPacket(buffer, buffer.size)
-                socket.receive(datagram)
+                socket.receive (datagram)
 
                 //Store away the string representations of the lights
                 val responseString = String(datagram.data, 0, datagram.length)
-                Log.d("kYee","Received multicast response: $responseString")
-                responseList.add(responseString)
+                if(!responseList.contains(responseString)) {
+                    Log.d("kYee","Received multicast response: $responseString")
+                    responseList.add(responseString)
+                }
 
             }catch(e: Exception) {
                 val endTime = System.currentTimeMillis()
@@ -138,7 +140,7 @@ class LightManager private constructor() {
                     break
             }
         }
-        return responseList.toSet().toList() //Make sure duplicates are removed..
+        return responseList
     }
 
 }
