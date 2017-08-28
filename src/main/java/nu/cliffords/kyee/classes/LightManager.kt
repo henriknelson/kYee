@@ -1,8 +1,6 @@
 package nu.cliffords.kyee.classes
 
 import android.util.Log
-import org.jetbrains.anko.doAsync
-import org.jetbrains.anko.uiThread
 import org.json.JSONArray
 import java.net.DatagramPacket
 import java.net.InetAddress
@@ -10,8 +8,15 @@ import java.net.MulticastSocket
 import java.net.URI
 
 /**
- * Created by Henrik Nelson on 2017-08-15.
+ * The LightManager is a singleton object that
+ * provides means for the caller to discover
+ * local Yeelight devices
+ *
+ * @author  Henrik Nelson
+ * @version 1.0
+ * @since   2017-08-26
  */
+
 class LightManager private constructor() {
 
     private object Holder {
@@ -27,9 +32,15 @@ class LightManager private constructor() {
     private val MCAST_ADDR = "239.255.255.250"
     private val MCAST_PORT = 1982
 
-    fun getLights(listener: (List<Light>)->Unit, timeoutTime: Int = 4){
 
-        doAsync {
+    /**
+     * This method sends a device discovery request and listens for device responses
+     * @param timeoutTime Number of seconds before function should return
+     * @return List<Light> the list of discovered devices
+     */
+    fun getLights(timeoutTime: Int = 4): List<Light>{
+
+        //doAsync {
 
             val socket = MulticastSocket()
             try {
@@ -91,12 +102,13 @@ class LightManager private constructor() {
                 Log.e("kYee","Could not discover devices - reason: ${e.message}")
             }
             
-            uiThread {
+            //uiThread {
                 Log.d("kYee","LightManager - sending all discovered lights to caller")
-                listener(lights.values.toList())
-            }
+                //listener(lights.values.toList())
+                return lights.values.toList()
+            //}
 
-        }
+       // }
     }
 
     fun getLightFromId(lightId: String): Light? {
